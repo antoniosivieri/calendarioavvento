@@ -88,6 +88,7 @@
            STILI BUSTA / LETTERINA INIZIALE 3D
            ========================================================================== */
         #envelopeOverlay {
+            position: fixed; inset: 0; z-index: 50;
             perspective: 1400px;
             transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.9s;
         }
@@ -368,7 +369,7 @@
         </div>
 
         <!-- Busta Interattiva 3D -->
-        <div id="envelopeCard" class="envelope-wrapper cursor-pointer select-none" role="button" tabindex="0" aria-label="Apri la busta del calendario dell'avvento">
+        <div id="envelopeCard" onclick="openEnvelope()" class="envelope-wrapper cursor-pointer select-none" role="button" tabindex="0" aria-label="Apri la busta del calendario dell'avvento">
             <!-- Retro Busta -->
             <div class="envelope-back"></div>
 
@@ -390,7 +391,7 @@
             <div class="envelope-top-flap"></div>
 
             <!-- Sigillo di Ceralacca Dorata -->
-            <button type="button" id="waxSealBtn" class="wax-seal" title="Apri la lettera" aria-label="Rompi il sigillo dorato e apri la lettera">
+            <button type="button" id="waxSealBtn" onclick="openEnvelope()" class="wax-seal" title="Apri la lettera" aria-label="Rompi il sigillo dorato e apri la lettera">
                 <svg class="w-8 h-8 text-burgundy-deep drop-shadow-xs pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
@@ -398,7 +399,7 @@
         </div>
 
         <!-- Azione rapida per saltare o aprire -->
-        <button type="button" id="openEnvelopeFallbackBtn" class="mt-10 text-xs uppercase tracking-[0.22em] text-gold/80 hover:text-gold transition py-2.5 px-5 rounded-full border border-gold/25 hover:border-gold/60 bg-burgundy-card/40 cursor-pointer">
+        <button type="button" id="openEnvelopeFallbackBtn" onclick="openEnvelope()" class="mt-10 text-xs uppercase tracking-[0.22em] text-gold/80 hover:text-gold transition py-2.5 px-5 rounded-full border border-gold/25 hover:border-gold/60 bg-burgundy-card/40 cursor-pointer">
             Apri la letterina ✨
         </button>
     </div>
@@ -790,15 +791,16 @@
             wrapper.classList.add('is-opening');
             topHint.style.opacity = '0';
 
-            // 2. Scintillii dorati all'apertura del sigillo
-            setTimeout(() => {
-                triggerGoldConfetti();
-            }, 250);
+            // 2. Scintillii dorati (se falliscono, non blocca nulla)
+            setTimeout(() => { try { triggerGoldConfetti(); } catch (e) {} }, 250);
 
-            // 3. Dopo aver fatto ammirare la letterina aperta, dissolvi l'overlay e rivela il calendario
+            // 3. Dissolvi la busta e rivela il calendario
             setTimeout(() => {
                 overlay.classList.add('opened-fade');
+                overlay.style.pointerEvents = 'none';
                 mainCal.classList.add('is-visible');
+                mainCal.style.opacity = '1';
+                mainCal.style.transform = 'none';
             }, 1350);
         }
 
@@ -811,6 +813,7 @@
             wrapper.classList.remove('is-opening');
             topHint.style.opacity = '1';
             overlay.classList.remove('opened-fade');
+            overlay.style.pointerEvents = '';
         }
 
         /* ==========================================================================
@@ -1245,9 +1248,9 @@
 
         // Inizializzazione al caricamento
         document.addEventListener('DOMContentLoaded', () => {
-            createAmbientGoldDust();
-            renderHeader();
-            renderGrid();
+            try { createAmbientGoldDust(); } catch (e) { console.error(e); }
+            try { renderHeader(); } catch (e) { console.error(e); }
+            try { renderGrid(); } catch (e) { console.error(e); }
 
             // Modalità Creatore nascosta: visibile solo aprendo il link con #creatore in fondo
             if (location.hash === '#creatore') {
