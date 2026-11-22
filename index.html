@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Per Te — Calendario dell'Avvento</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Canvas Confetti per scintillii dorati -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Configurazione Tailwind Custom -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        burgundy: {
+                            deep: '#24080B',
+                            DEFAULT: '#2B0B0E',
+                            card: '#4A151B',
+                            light: '#681E26',
+                        },
+                        festive: {
+                            red: '#D94532',
+                            redHover: '#E5503D',
+                            cream: '#FAF6F0',
+                            creamDark: '#EFE7DC',
+                        },
+                        gold: {
+                            light: '#F5E4B7',
+                            DEFAULT: '#D4AF37',
+                            dark: '#9C7A1C',
+                        }
+                    },
+                    boxShadow: {
+                        'bento': '0 10px 25px -5px rgba(0, 0, 0, 0.45)',
+                        'bento-hover': '0 20px 35px -10px rgba(212, 175, 55, 0.25)',
+                        'envelope': '0 30px 60px -15px rgba(0, 0, 0, 0.75)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Sfondo Bordeaux Scuro con effetto stelle/polvere d'oro */
+        body {
+            background-color: #2B0B0E;
+            color: #FAF6F0;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(104, 30, 38, 0.45) 0%, transparent 65%),
+                radial-gradient(rgba(212, 175, 55, 0.25) 1px, transparent 1px),
+                radial-gradient(rgba(250, 246, 240, 0.15) 1px, transparent 1px);
+            background-size: 100% 100%, 48px 48px, 31px 31px;
+            background-position: 0 0, 0 0, 15px 15px;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* Particelle dorate fluttuanti nello sfondo */
+        @keyframes floatParticle {
+            0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.25; }
+            50% { transform: translateY(-18px) translateX(6px); opacity: 0.85; }
+        }
+        .gold-dust {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle, #F5E4B7 0%, #D4AF37 70%, transparent 100%);
+            pointer-events: none;
+            z-index: 1;
+            animation: floatParticle var(--dur, 6s) ease-in-out infinite;
+            animation-delay: var(--delay, 0s);
+        }
+
+        /* ==========================================================================
+           STILI BUSTA / LETTERINA INIZIALE 3D
+           ========================================================================== */
+        #envelopeOverlay {
+            perspective: 1400px;
+            transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.9s;
+        }
+
+        #envelopeOverlay.opened-fade {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            aspect-ratio: 1.45 / 1;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .envelope-wrapper:hover:not(.is-opening) {
+            transform: translateY(-6px) scale(1.015);
+        }
+
+        /* Corpo base della busta */
+        .envelope-back {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(145deg, #3D1015 0%, #26070A 100%);
+            border-radius: 18px;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85), inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Foglio della lettera interna che scorre verso l'alto */
+        .letter-sheet {
+            position: absolute;
+            left: 6%;
+            right: 6%;
+            top: 8%;
+            bottom: 8%;
+            background: linear-gradient(180deg, #FAF6F0 0%, #EFE7DC 100%);
+            color: #2B0B0E;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+            transition: transform 0.95s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+        }
+
+        .envelope-wrapper.is-opening .letter-sheet {
+            transform: translateY(-58%) scale(1.04);
+            z-index: 6;
+        }
+
+        /* Tasca anteriore della busta (triangoli sinistro, destro e inferiore) */
+        .envelope-pocket {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .envelope-pocket::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #4F161D 0%, #380E13 100%);
+            clip-path: polygon(0 0, 52% 54%, 0 100%);
+            border-left: 1px solid rgba(212, 175, 55, 0.25);
+        }
+
+        .envelope-pocket::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(225deg, #4B141B 0%, #340C11 100%);
+            clip-path: polygon(100% 0, 48% 54%, 100% 100%);
+        }
+
+        .envelope-bottom-flap {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+            border-radius: 18px;
+            background: linear-gradient(0deg, #3A0E13 0%, #561920 100%);
+            clip-path: polygon(0 100%, 50% 46%, 100% 100%);
+            filter: drop-shadow(0 -4px 8px rgba(0, 0, 0, 0.35));
+        }
+
+        /* Patta superiore della busta (quella che ruota in 3D) */
+        .envelope-top-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 62%;
+            z-index: 5;
+            transform-origin: top center;
+            transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.1s linear 0.35s;
+            background: linear-gradient(180deg, #5E1B23 0%, #421117 100%);
+            clip-path: polygon(0 0, 100% 0, 50% 96%);
+            border-top-left-radius: 18px;
+            border-top-right-radius: 18px;
+            filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
+        }
+
+        .envelope-wrapper.is-opening .envelope-top-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        /* Sigillo di Ceralacca Dorata */
+        .wax-seal {
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #F7E7B4 0%, #D4AF37 45%, #8F6B14 100%);
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.7),
+                inset 0 -3px 6px rgba(92, 65, 6, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 3px solid rgba(255, 243, 200, 0.45);
+        }
+
+        .wax-seal::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(92, 65, 6, 0.55);
+        }
+
+        .wax-seal:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow: 0 14px 30px rgba(212, 175, 55, 0.45), inset 0 2px 5px rgba(255, 255, 255, 0.85);
+        }
+
+        .envelope-wrapper.is-opening .wax-seal {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.4);
+            pointer-events: none;
+        }
+
+        /* ==========================================================================
+           STILI CASELLE BENTO & EFFETTO ORO METALLIZZATO (GIORNO 24)
+           ========================================================================== */
+        .bento-card {
+            position: relative;
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, filter 0.3s ease;
+            transform-style: preserve-3d;
+            overflow: hidden;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-4px) scale(1.015);
+            box-shadow: 0 18px 32px -8px rgba(0, 0, 0, 0.55);
+            z-index: 10;
+        }
+
+        /* Animazione di apertura della singola casella al click */
+        @keyframes doorPopOpen {
+            0% { transform: scale(1) perspective(800px) rotateY(0deg); }
+            45% { transform: scale(1.05) perspective(800px) rotateY(-18deg); }
+            100% { transform: scale(1) perspective(800px) rotateY(0deg); }
+        }
+        .door-opening-anim {
+            animation: doorPopOpen 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Gradiente Oro Metallizzato Satinato per la casella 24 */
+        .gold-metallic-card {
+            background: linear-gradient(135deg, #D5B358 0%, #F3E2A9 32%, #C99E38 65%, #E7CE7D 100%);
+            box-shadow: 
+                0 15px 35px -5px rgba(212, 175, 55, 0.35),
+                inset 0 1px 1px rgba(255, 255, 255, 0.65);
+        }
+
+        .gold-metallic-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 45%;
+            height: 200%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.45), transparent);
+            transform: rotate(25deg);
+            transition: left 0.85s ease;
+            pointer-events: none;
+        }
+
+        .gold-metallic-card:hover::after {
+            left: 130%;
+        }
+
+        /* Animazione shake per casella bloccata */
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .shake-anim {
+            animation: gentleShake 0.45s ease-in-out;
+        }
+
+        /* Animazione Modale */
+        .modal-backdrop {
+            transition: opacity 0.35s ease;
+        }
+        .modal-content {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+        }
+        .modal-hidden .modal-backdrop {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-hidden .modal-content {
+            opacity: 0;
+            transform: translateY(20px) scale(0.96);
+            pointer-events: none;
+        }
+
+        /* Animazione ingresso calendario dopo apertura busta */
+        .calendar-reveal {
+            opacity: 0;
+            transform: translateY(24px) scale(0.98);
+            transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .calendar-reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Scrollbar elegante */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #24080B; }
+        ::-webkit-scrollbar-thumb { background: #681E26; border-radius: 3px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-gold selection:text-burgundy-deep">
+
+    <!-- Particelle dorate ambientali -->
+    <div id="particlesContainer" aria-hidden="true"></div>
+
+    <!-- ==========================================================================
+         SCHERMATA INIZIALE: BUSTA / LETTERINA SIGILLATA CON CERALACCA DORATA
+         ========================================================================== -->
+    <div id="envelopeOverlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-5 bg-[#220609]/95 backdrop-blur-md">
+        
+        <!-- Piccola scritta superiore -->
+        <div class="text-center mb-8 sm:mb-10 transition-opacity duration-500" id="envelopeTopHint">
+            <span class="text-[11px] uppercase tracking-[0.28em] text-gold font-semibold block mb-2">Una consegna speciale</span>
+            <p class="font-serif italic text-festive-cream/80 text-sm sm:text-base">Tocca il sigillo dorato per aprire la tua lettera</p>
+        </div>
+
+        <!-- Busta Interattiva 3D -->
+        <div id="envelopeCard" onclick="openEnvelope()" class="envelope-wrapper cursor-pointer select-none" role="button" tabindex="0" aria-label="Apri la busta del calendario dell'avvento">
+            <!-- Retro Busta -->
+            <div class="envelope-back"></div>
+
+            <!-- Foglio Interno che scorre verso l'alto -->
+            <div class="letter-sheet">
+                <span class="text-[10px] uppercase tracking-[0.25em] text-gold-dark font-bold mb-1" id="envelopeEyebrowDisplay">PER</span>
+                <h2 class="font-serif text-2xl sm:text-3xl font-bold text-burgundy mb-2" id="envelopeRecipientDisplay">Te</h2>
+                <div class="w-8 h-[1.5px] bg-gold mb-2.5"></div>
+                <p class="text-xs sm:text-sm text-burgundy/80 font-medium leading-relaxed max-w-[260px]" id="envelopeNoteDisplay">
+                    24 piccoli pensieri d'amore ti aspettano qui dentro...
+                </p>
+            </div>
+
+            <!-- Tasca Anteriore (Lati e Fondo) -->
+            <div class="envelope-pocket"></div>
+            <div class="envelope-bottom-flap"></div>
+
+            <!-- Patta Superiore che si apre in 3D -->
+            <div class="envelope-top-flap"></div>
+
+            <!-- Sigillo di Ceralacca Dorata -->
+            <div class="wax-seal" title="Apri la lettera">
+                <svg class="w-8 h-8 text-burgundy-deep drop-shadow-xs" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Azione rapida per saltare o aprire -->
+        <button onclick="openEnvelope()" class="mt-10 text-xs uppercase tracking-[0.22em] text-gold/80 hover:text-gold transition py-2 px-4 rounded-full border border-gold/25 hover:border-gold/60 bg-burgundy-card/40">
+            Apri la letterina ✨
+        </button>
+    </div>
+
+    <!-- ==========================================================================
+         BANNER MODALITÀ CREATORE (Visibile solo quando attiva)
+         ========================================================================== -->
+    <div id="adminBanner" class="hidden sticky top-0 z-40 bg-burgundy-deep/95 backdrop-blur-md text-festive-cream px-4 py-3 shadow-lg border-b border-gold/40">
+        <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-gold animate-pulse"></span>
+                <span class="text-xs sm:text-sm font-medium tracking-wide">Modalità Creatore — Tutte le caselle sbloccate</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openHeaderEditor()" class="text-xs bg-burgundy-card hover:bg-burgundy-light text-festive-cream px-3 py-1.5 rounded-full transition border border-gold/30">
+                    Testi & Busta
+                </button>
+                <button onclick="previewEnvelopeAgain()" class="text-xs bg-burgundy-card hover:bg-burgundy-light text-gold px-3 py-1.5 rounded-full transition border border-gold/30">
+                    Rivedi Busta
+                </button>
+                <button onclick="exportReadyHTML()" class="text-xs bg-gold hover:bg-gold-light text-burgundy-deep font-bold px-3.5 py-1.5 rounded-full transition shadow-sm flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Scarica HTML Pronto
+                </button>
+                <button onclick="toggleAdminMode()" class="text-xs text-festive-cream/70 hover:text-white px-2 py-1.5 transition">
+                    Esci
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         CONTENUTO PRINCIPALE: CALENDARIO A MOSAICO (STILE SECONDA FOTO)
+         ========================================================================== -->
+    <div id="mainCalendarWrapper" class="calendar-reveal relative z-10 flex-grow flex flex-col justify-between">
+        
+        <!-- Header Editoriale (Stile "PARA Marta" della foto) -->
+        <header class="pt-10 pb-7 sm:pt-14 sm:pb-10 px-5 text-center max-w-xl mx-auto">
+            <span id="displaySubtitle" class="block text-[11px] sm:text-xs uppercase tracking-[0.28em] text-gold font-bold mb-1.5">
+                PER TE
+            </span>
+            <h1 id="displayTitle" class="font-sans text-5xl sm:text-6xl md:text-7xl text-festive-cream font-extrabold tracking-tight leading-none mb-4 drop-shadow-sm">
+                Amore Mio
+            </h1>
+            <p id="displayIntro" class="text-xs sm:text-sm text-festive-cream/85 font-normal max-w-md mx-auto leading-relaxed mb-3">
+                Questo dicembre non aprirai cioccolatini, ma 24 piccoli pezzi di noi. Una porta ogni mattina, e niente trucchi (anche se non potresti comunque).
+            </p>
+            <p id="displaySignature" class="font-serif italic text-sm sm:text-base text-gold">
+                Con affetto, sempre tuo.
+            </p>
+        </header>
+
+        <!-- Griglia Bento Asimmetrica 24 Caselle (Esattamente ispirata al layout della foto) -->
+        <main class="flex-grow px-4 sm:px-6 pb-16 max-w-[780px] mx-auto w-full">
+            <div id="calendarGrid" class="grid grid-cols-4 gap-2.5 sm:gap-3.5 auto-rows-[88px] sm:auto-rows-[118px] grid-flow-dense">
+                <!-- Le 24 card a mosaico vengono generate dinamicamente via JS -->
+            </div>
+        </main>
+
+        <!-- Footer discreto con accesso creatore e possibilità di rivedere la busta -->
+        <footer class="py-7 px-6 text-center border-t border-gold/15 bg-burgundy-deep/60 backdrop-blur-xs">
+            <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-festive-cream/60">
+                <button onclick="previewEnvelopeAgain()" class="inline-flex items-center gap-1.5 hover:text-gold transition py-1 px-3 rounded-full hover:bg-burgundy-card/60">
+                    <span>✉️</span>
+                    <span>Rivedi la letterina</span>
+                </button>
+                <span class="opacity-30">•</span>
+                <button onclick="toggleAdminMode()" id="adminToggleBtn" class="inline-flex items-center gap-1.5 hover:text-festive-cream transition py-1 px-3 rounded-full hover:bg-burgundy-card/60" title="Area Creatore / Personalizza">
+                    <svg class="w-3.5 h-3.5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span id="adminToggleText">Modalità Creatore</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notification per caselle bloccate o salvataggi -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform translate-y-4">
+        <div class="bg-burgundy-deep text-festive-cream px-5 py-3 rounded-2xl shadow-2xl border border-gold/50 flex items-center gap-3 text-xs sm:text-sm max-w-[90vw]">
+            <span class="text-gold text-base">✨</span>
+            <span id="toastMessage" class="font-medium tracking-wide">Non sbirciare!</span>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODALE VISUALIZZAZIONE SORPRESA DEL GIORNO
+         ========================================================================== -->
+    <div id="dayModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 modal-hidden">
+        <!-- Backdrop -->
+        <div onclick="closeDayModal()" class="modal-backdrop fixed inset-0 bg-black/75 backdrop-blur-xs"></div>
+        
+        <!-- Contenuto Card -->
+        <div class="modal-content relative w-full max-w-lg bg-festive-cream text-burgundy rounded-3xl shadow-2xl border-2 border-gold/40 overflow-hidden max-h-[90vh] flex flex-col">
+            
+            <!-- Header Modale -->
+            <div class="px-6 pt-5 pb-4 flex items-center justify-between border-b border-burgundy/10 bg-festive-creamDark/60">
+                <div class="flex items-center gap-2.5">
+                    <span id="modalDayBadge" class="w-9 h-9 rounded-xl bg-festive-red text-festive-cream font-sans font-extrabold flex items-center justify-center text-base shadow-xs">1</span>
+                    <span class="text-xs uppercase tracking-[0.2em] text-burgundy/70 font-bold">Dicembre</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="modalEditTrigger" onclick="switchToDayEditor()" class="hidden text-xs bg-burgundy text-gold px-3.5 py-1.5 rounded-full hover:bg-burgundy-card transition font-semibold">
+                        Modifica Giorno
+                    </button>
+                    <button onclick="closeDayModal()" class="w-8 h-8 rounded-full bg-burgundy/10 hover:bg-burgundy/20 flex items-center justify-center text-burgundy transition" aria-label="Chiudi">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body Modale Scrollabile -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6">
+                <!-- Immagine Opzionale -->
+                <div id="modalImageContainer" class="hidden rounded-2xl overflow-hidden border border-burgundy/15 bg-white shadow-sm">
+                    <img id="modalImage" src="" alt="Ricordo del giorno" class="w-full max-h-72 object-cover" onerror="this.parentElement.classList.add('hidden')">
+                </div>
+
+                <!-- Titolo e Dedica -->
+                <div class="text-center space-y-3">
+                    <h2 id="modalTitle" class="font-serif text-2xl sm:text-3xl font-bold text-burgundy leading-snug">Titolo del giorno</h2>
+                    <div class="w-10 h-[2px] bg-gold mx-auto"></div>
+                    <p id="modalMessage" class="text-sm sm:text-base text-burgundy/85 font-normal leading-relaxed whitespace-pre-line">
+                        Messaggio dedicato...
+                    </p>
+                </div>
+
+                <!-- Bottone Link Opzionale -->
+                <div id="modalLinkContainer" class="hidden pt-2 text-center">
+                    <a id="modalLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-festive-red hover:bg-festive-redHover text-white text-sm font-bold transition shadow-md">
+                        <span id="modalLinkLabel">Scopri la sorpresa</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODALE EDITOR SINGOLO GIORNO (ADMIN)
+         ========================================================================== -->
+    <div id="editorModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 modal-hidden">
+        <div onclick="closeEditorModal()" class="modal-backdrop fixed inset-0 bg-black/75 backdrop-blur-xs"></div>
+        
+        <div class="modal-content relative w-full max-w-lg bg-festive-cream text-burgundy rounded-3xl shadow-2xl border-2 border-gold/40 overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-burgundy text-festive-cream flex items-center justify-between">
+                <h3 class="font-serif text-lg font-bold">Personalizza Giorno <span id="editorDayNumber" class="text-gold">1</span></h3>
+                <button onclick="closeEditorModal()" class="text-festive-cream/70 hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form id="dayEditorForm" onsubmit="saveDayEdit(event)" class="p-6 overflow-y-auto space-y-4 text-sm">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-burgundy/70 font-bold mb-1.5">Titolo del Giorno</label>
+                    <input type="text" id="editTitle" required class="w-full px-4 py-2.5 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none" placeholder="Es. Il nostro primo caffè">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-burgundy/70 font-bold mb-1.5">Messaggio / Dedica</label>
+                    <textarea id="editMessage" rows="4" required class="w-full px-4 py-2.5 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none leading-relaxed" placeholder="Scrivi qui il tuo pensiero..."></textarea>
+                </div>
+
+                <!-- Sezione Foto -->
+                <div class="p-4 rounded-2xl bg-festive-creamDark/60 border border-burgundy/15 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs uppercase tracking-wider text-burgundy/80 font-bold">Foto (Opzionale)</label>
+                        <button type="button" onclick="clearImageInput()" class="text-xs text-festive-red hover:underline font-medium">Rimuovi foto</button>
+                    </div>
+                    
+                    <input type="text" id="editImageUrl" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 text-xs focus:border-festive-red focus:outline-none" placeholder="Incolla URL immagine oppure carica un file qui sotto">
+                    
+                    <div class="flex items-center gap-3">
+                        <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 hover:border-gold text-xs font-semibold text-burgundy transition">
+                            <svg class="w-4 h-4 text-festive-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Carica dal dispositivo
+                            <input type="file" id="editImageFile" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                        </label>
+                        <span id="imageUploadStatus" class="text-xs text-burgundy font-medium"></span>
+                    </div>
+                </div>
+
+                <!-- Sezione Link -->
+                <div class="p-4 rounded-2xl bg-festive-creamDark/60 border border-burgundy/15 space-y-3">
+                    <label class="block text-xs uppercase tracking-wider text-burgundy/80 font-bold">Link Esterno (Opzionale - Spotify, Video, Indizio)</label>
+                    <input type="url" id="editLinkUrl" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 text-xs focus:border-festive-red focus:outline-none" placeholder="https://open.spotify.com/...">
+                    <input type="text" id="editLinkLabel" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 text-xs focus:border-festive-red focus:outline-none" placeholder="Testo bottone (es. Ascolta la nostra canzone)">
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeEditorModal()" class="px-4 py-2.5 rounded-xl text-burgundy/70 hover:bg-burgundy/10 font-medium transition">Annulla</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-festive-red hover:bg-festive-redHover text-white font-bold shadow-sm transition">Salva Modifiche</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODALE EDITOR INTESTAZIONE E BUSTA INIZIALE
+         ========================================================================== -->
+    <div id="headerEditorModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-hidden">
+        <div onclick="closeHeaderEditor()" class="modal-backdrop fixed inset-0 bg-black/75 backdrop-blur-xs"></div>
+        <div class="modal-content relative w-full max-w-md bg-festive-cream text-burgundy rounded-3xl shadow-2xl border-2 border-gold/40 overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-burgundy text-festive-cream flex items-center justify-between">
+                <h3 class="font-serif text-lg font-bold">Personalizza Testi & Busta</h3>
+                <button onclick="closeHeaderEditor()" class="text-festive-cream/70 hover:text-white">✕</button>
+            </div>
+            <form onsubmit="saveHeaderEdit(event)" class="p-6 overflow-y-auto space-y-4 text-sm">
+                <div class="p-3.5 rounded-2xl bg-festive-creamDark/70 border border-burgundy/10 space-y-3">
+                    <span class="block text-[11px] uppercase tracking-wider text-gold-dark font-bold">Intestazione Calendario</span>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Occhiello superiore (es. PER)</label>
+                        <input type="text" id="editHeaderSubtitle" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Nome / Titolo Grande (es. Marta)</label>
+                        <input type="text" id="editHeaderTitle" required class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Frase introduttiva</label>
+                        <textarea id="editHeaderIntro" rows="3" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Firma finale (es. Con affetto, Alex)</label>
+                        <input type="text" id="editHeaderSignature" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-festive-creamDark/70 border border-burgundy/10 space-y-3">
+                    <span class="block text-[11px] uppercase tracking-wider text-gold-dark font-bold">Lettera nella Busta Iniziale</span>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Messaggio dentro la busta</label>
+                        <textarea id="editEnvelopeNote" rows="2" class="w-full px-3.5 py-2 rounded-xl bg-white border border-burgundy/20 focus:border-festive-red focus:outline-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeHeaderEditor()" class="px-4 py-2 rounded-xl text-burgundy/70 font-medium">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-festive-red text-white font-bold">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           DATI PREDEFINITI DEL CALENDARIO (Verranno sovrascritti nell'export HTML)
+           ========================================================================== */
+        const INITIAL_CONFIG = /*CONFIG_START*/{
+            header: {
+                subtitle: "PER",
+                title: "Amore Mio",
+                intro: "Questo dicembre non aprirai cioccolatini, ma 24 piccoli pezzi di noi. Una porta ogni mattina, e niente trucchi (anche se non potresti comunque).",
+                signature: "Con affetto, sempre tuo.",
+                envelopeNote: "24 piccoli pensieri d'amore ti aspettano qui dentro. Apri una porta ogni giorno fino a Natale..."
+            },
+            days: [
+                { day: 1, title: "L'inizio della magia", message: "Benvenuta nel tuo calendario dell'avvento personale. Ogni giorno fino a Natale troverai qui un piccolo pensiero, un ricordo o un indizio legato al pacchetto di oggi.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 2, title: "La nostra colonna sonora", message: "Ci sono canzoni che appena partono mi fanno subito pensare a te. Metti le cuffie e premi play.", image: "", linkUrl: "https://open.spotify.com", linkLabel: "Ascolta la canzone" },
+                { day: 3, title: "Un piccolo dettaglio", message: "Amo il modo in cui ti brillano gli occhi quando parli di qualcosa che ti appassiona davvero.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 4, title: "Pausa dolcezza", message: "Oggi il pacchetto nasconde qualcosa per addolcire la tua giornata. Goditelo tutto!", image: "", linkUrl: "", linkLabel: "" },
+                { day: 5, title: "Un ricordo speciale", message: "Ripensavo a quanto abbiamo riso quel giorno. È uno dei miei momenti preferiti insieme a te.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 6, title: "Solo per te", message: "A volte nella frenesia di tutti i giorni ci dimentichiamo di fermarci. Prenditi dieci minuti oggi solo per te stessa.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 7, title: "Una settimana insieme", message: "Siamo già al settimo giorno! Spero che queste piccole sorprese ti stiano strappando un sorriso ogni mattina.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 8, title: "Atmosfera d'inverno", message: "Fuori fa freddo, ma stare con te è sempre il posto più caldo e sicuro del mondo.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 9, title: "Un pensiero veloce", message: "Non serve un motivo speciale per dirti che sei la parte migliore delle mie giornate.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 10, title: "Indizio per stasera", message: "Preparati per una serata diversa dal solito. Non fare programmi!", image: "", linkUrl: "", linkLabel: "" },
+                { day: 11, title: "Piccole cose", message: "Grazie per esserci sempre, anche nelle giornate più complicate, con la tua calma e il tuo sorriso.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 12, title: "Metà strada", message: "Dodici giorni passati, dodici ancora da scoprire. Il bello deve ancora venire.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 13, title: "Una foto del cuore", message: "Guarda questo scatto: racconta perfettamente quanto stiamo bene insieme.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 14, title: "Il tuo profumo", message: "È incredibile come basti un dettaglio per farmi venire voglia di abbracciarti.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 15, title: "Coccole d'inverno", message: "Il regalo di oggi è pensato per accompagnare i tuoi momenti di relax.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 16, title: "Sempre dalla tua parte", message: "Qualunque sia il tuo prossimo obiettivo o sogno, ricordati che io faccio sempre il tifo per te.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 17, title: "Manca una settimana", message: "Il countdown entra nel vivo. Spero che questo dicembre ti stia piacendo tanto quanto piace a me passarlo con te.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 18, title: "Un desiderio", message: "Se potessi esprimere un desiderio per l'anno prossimo, sarebbe semplicemente continuare a collezionare momenti così.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 19, title: "Complimenti", message: "Sei incredibile in tutto ciò che fai, anche quando pensi di non esserlo abbastanza.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 20, title: "Quasi Natale", message: "L'aria di festa si fa sentire. Apri il pacchetto di oggi con calma!", image: "", linkUrl: "", linkLabel: "" },
+                { day: 21, title: "Solstizio d'inverno", message: "Il giorno più corto dell'anno, ma con te ogni minuto vale doppio.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 22, title: "Due giorni alla Vigilia", message: "Siamo agli sgoccioli di questo calendario, ma le sorprese non sono ancora finite.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 23, title: "L'attesa", message: "Domani è l'ultima casella. Grazie per aver aperto ogni giorno questo piccolo spazio dedicato a noi.", image: "", linkUrl: "", linkLabel: "" },
+                { day: 24, title: "Il Grande Giorno, Amore mio", message: "Siamo arrivati al 24 dicembre. Il regalo più grande per me resta averti accanto ogni giorno. Buon Natale a noi!", image: "", linkUrl: "", linkLabel: "" }
+            ]
+        }/*CONFIG_END*/;
+
+        /* ==========================================================================
+           LAYOUT ASIMMETRICO A MOSAICO (ISPIRATO ALLA SECONDA FOTO)
+           Ordine sparso tradizionale + colori alternati (cream, red, burgundy, gold)
+           ========================================================================== */
+        const BENTO_MOSAIC_LAYOUT = [
+            // Riga 1-2
+            { day: 7,  span: "col-span-1 row-span-1", theme: "cream" },
+            { day: 15, span: "col-span-1 row-span-1", theme: "burgundy" },
+            { day: 1,  span: "col-span-2 row-span-1", theme: "red" },
+            // Riga 2-3 (con il grande 24 dorato a sinistra!)
+            { day: 24, span: "col-span-2 row-span-2", theme: "gold", badge: "Il grande giorno" },
+            { day: 4,  span: "col-span-1 row-span-1", theme: "cream" },
+            { day: 22, span: "col-span-1 row-span-1", theme: "cream" },
+            { day: 20, span: "col-span-1 row-span-1", theme: "burgundy" },
+            { day: 13, span: "col-span-1 row-span-2", theme: "cream" },
+            // Riga 4-5
+            { day: 9,  span: "col-span-2 row-span-1", theme: "red" },
+            { day: 18, span: "col-span-1 row-span-1", theme: "cream" },
+            { day: 2,  span: "col-span-1 row-span-1", theme: "cream" },
+            // Riga 5-6
+            { day: 11, span: "col-span-1 row-span-1", theme: "red" },
+            { day: 6,  span: "col-span-2 row-span-1", theme: "burgundy" },
+            { day: 19, span: "col-span-1 row-span-2", theme: "red" },
+            // Riga 6-7
+            { day: 14, span: "col-span-1 row-span-1", theme: "cream" },
+            { day: 3,  span: "col-span-1 row-span-1", theme: "burgundy" },
+            { day: 21, span: "col-span-1 row-span-1", theme: "cream" },
+            // Riga 7-8
+            { day: 8,  span: "col-span-2 row-span-1", theme: "cream" },
+            { day: 16, span: "col-span-1 row-span-1", theme: "burgundy" },
+            { day: 5,  span: "col-span-1 row-span-1", theme: "red" },
+            // Riga 8-9
+            { day: 12, span: "col-span-1 row-span-1", theme: "burgundy" },
+            { day: 17, span: "col-span-2 row-span-1", theme: "red" },
+            { day: 10, span: "col-span-1 row-span-1", theme: "cream" },
+            { day: 23, span: "col-span-4 row-span-1", theme: "burgundy", badge: "La Vigilia" }
+        ];
+
+        /* ==========================================================================
+           STATO DELL'APPLICAZIONE
+           ========================================================================== */
+        const STORAGE_KEY = 'advent_calendar_bento_v2';
+        const OPENED_KEY = 'advent_calendar_opened_v2';
+        
+        let appData = loadAppData();
+        let openedDays = loadOpenedDays();
+        let isAdminMode = false;
+        let currentEditingDay = null;
+        let toastTimeout = null;
+        let envelopeOpened = false;
+
+        function loadAppData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return {
+                        header: { ...INITIAL_CONFIG.header, ...(parsed.header || {}) },
+                        days: parsed.days || INITIAL_CONFIG.days
+                    };
+                }
+            } catch (e) {
+                console.warn("Errore lettura localStorage:", e);
+            }
+            return JSON.parse(JSON.stringify(INITIAL_CONFIG));
+        }
+
+        function saveAppData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            } catch (e) {
+                showToast("Attenzione: foto pesante per la memoria locale. Usa 'Scarica HTML Pronto' per salvarla nel file.");
+            }
+        }
+
+        function loadOpenedDays() {
+            try {
+                const saved = localStorage.getItem(OPENED_KEY);
+                return saved ? JSON.parse(saved) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function markDayAsOpened(dayNum) {
+            if (!openedDays.includes(dayNum)) {
+                openedDays.push(dayNum);
+                try {
+                    localStorage.setItem(OPENED_KEY, JSON.stringify(openedDays));
+                } catch (e) {}
+            }
+        }
+
+        /* ==========================================================================
+           ANIMAZIONE APERTURA BUSTA / LETTERINA INIZIALE
+           ========================================================================== */
+        function openEnvelope() {
+            if (envelopeOpened) return;
+            envelopeOpened = true;
+
+            const wrapper = document.getElementById('envelopeCard');
+            const overlay = document.getElementById('envelopeOverlay');
+            const topHint = document.getElementById('envelopeTopHint');
+            const mainCal = document.getElementById('mainCalendarWrapper');
+
+            // 1. Apri la patta superiore 3D e fai scorrere fuori la letterina
+            wrapper.classList.add('is-opening');
+            topHint.style.opacity = '0';
+
+            // 2. Scintillii dorati all'apertura del sigillo
+            setTimeout(() => {
+                triggerGoldConfetti();
+            }, 250);
+
+            // 3. Dopo aver fatto ammirare la letterina aperta, dissolvi l'overlay e rivela il calendario
+            setTimeout(() => {
+                overlay.classList.add('opened-fade');
+                mainCal.classList.add('is-visible');
+            }, 1350);
+        }
+
+        function previewEnvelopeAgain() {
+            envelopeOpened = false;
+            const wrapper = document.getElementById('envelopeCard');
+            const overlay = document.getElementById('envelopeOverlay');
+            const topHint = document.getElementById('envelopeTopHint');
+
+            wrapper.classList.remove('is-opening');
+            topHint.style.opacity = '1';
+            overlay.classList.remove('opened-fade');
+        }
+
+        /* ==========================================================================
+           LOGICA DI SBLOCCO DATA REALE (1 - 24 DICEMBRE)
+           ========================================================================== */
+        function isDayUnlocked(dayNumber) {
+            if (isAdminMode) return true;
+
+            const now = new Date();
+            const currentMonth = now.getMonth(); // 11 = Dicembre
+            const currentDate = now.getDate();
+
+            if (currentMonth === 11) {
+                return dayNumber <= currentDate;
+            }
+            return false;
+        }
+
+        /* ==========================================================================
+           RENDERING UI (INTESTAZIONE, BUSTA E MOSAICO BENTO)
+           ========================================================================== */
+        function renderHeader() {
+            document.getElementById('displaySubtitle').textContent = appData.header.subtitle;
+            document.getElementById('displayTitle').textContent = appData.header.title;
+            document.getElementById('displayIntro').textContent = appData.header.intro;
+            document.getElementById('displaySignature').textContent = appData.header.signature || "";
+
+            // Aggiorna anche i testi sulla letterina della busta iniziale
+            document.getElementById('envelopeEyebrowDisplay').textContent = appData.header.subtitle;
+            document.getElementById('envelopeRecipientDisplay').textContent = appData.header.title;
+            document.getElementById('envelopeNoteDisplay').textContent = appData.header.envelopeNote || "24 piccoli pensieri d'amore ti aspettano qui dentro...";
+
+            document.title = `${appData.header.subtitle} ${appData.header.title} — Calendario dell'Avvento`;
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            BENTO_MOSAIC_LAYOUT.forEach((slot) => {
+                const item = appData.days.find(d => d.day === slot.day) || { day: slot.day, title: `Giorno ${slot.day}`, message: "" };
+                const unlocked = isDayUnlocked(item.day);
+                const alreadyOpened = openedDays.includes(item.day);
+                const isToday = (new Date().getMonth() === 11 && new Date().getDate() === item.day);
+
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.id = `card-day-${item.day}`;
+
+                // Classi colore in base al tema della tessera (esattamente come nella seconda foto)
+                let themeClasses = "";
+                let numberColorClass = "";
+                let subTextColorClass = "";
+
+                if (slot.theme === "cream") {
+                    themeClasses = "bg-festive-cream hover:bg-white border border-black/5";
+                    numberColorClass = "text-festive-red";
+                    subTextColorClass = "text-burgundy/60";
+                } else if (slot.theme === "red") {
+                    themeClasses = "bg-festive-red hover:bg-festive-redHover border border-white/10";
+                    numberColorClass = "text-festive-cream";
+                    subTextColorClass = "text-festive-cream/80";
+                } else if (slot.theme === "burgundy") {
+                    themeClasses = "bg-burgundy-card hover:bg-burgundy-light border border-gold/15";
+                    numberColorClass = "text-festive-cream";
+                    subTextColorClass = "text-gold/80";
+                } else if (slot.theme === "gold") {
+                    themeClasses = "gold-metallic-card border border-gold-light/60";
+                    numberColorClass = "text-burgundy-deep";
+                    subTextColorClass = "text-burgundy-deep/80";
+                }
+
+                // Se già aperta, aggiungiamo un sottile bordo dorato di riconoscimento
+                const openedRing = alreadyOpened && !isAdminMode ? "ring-2 ring-gold/70" : "";
+                const todayRing = isToday && !isAdminMode && !alreadyOpened ? "ring-2 ring-gold animate-pulse" : "";
+
+                card.className = `bento-card ${slot.span} ${themeClasses} ${openedRing} ${todayRing} rounded-2xl sm:rounded-[22px] p-3.5 sm:p-5 flex flex-col justify-between text-left shadow-bento cursor-pointer select-none`;
+                card.onclick = () => handleCardClick(item.day, card);
+
+                // Etichetta superiore (es. "Il grande giorno" sul 24, oppure stato)
+                let topRightIndicator = "";
+                if (isAdminMode) {
+                    topRightIndicator = `<span class="text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-xs ${slot.theme === 'cream' || slot.theme === 'gold' ? 'text-burgundy font-bold' : 'text-gold font-semibold'}">Modifica</span>`;
+                } else if (alreadyOpened) {
+                    topRightIndicator = `<span class="w-2 h-2 rounded-full ${slot.theme === 'cream' || slot.theme === 'gold' ? 'bg-burgundy/50' : 'bg-gold'}"></span>`;
+                } else if (!unlocked) {
+                    topRightIndicator = `<svg class="w-3.5 h-3.5 opacity-35 ${numberColorClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`;
+                } else {
+                    topRightIndicator = `<span class="inline-block w-2 h-2 rounded-full bg-gold animate-ping"></span>`;
+                }
+
+                const topBadgeText = slot.badge 
+                    ? `<span class="text-[10px] sm:text-xs font-bold tracking-wide ${subTextColorClass}">${slot.badge}</span>`
+                    : (isAdminMode ? `<span class="text-[10px] truncate max-w-[75%] font-medium ${subTextColorClass}">${escapeHtml(item.title)}</span>` : `<span></span>`);
+
+                // Dimensione numero (molto grande sul 24, bold e moderno su tutte le altre in basso a sinistra come nella foto)
+                const numberSizeClass = slot.day === 24 
+                    ? "text-5xl sm:text-7xl tracking-tighter" 
+                    : "text-3xl sm:text-[42px] tracking-tight";
+
+                card.innerHTML = `
+                    <div class="w-full flex items-start justify-between gap-1">
+                        ${topBadgeText}
+                        ${topRightIndicator}
+                    </div>
+                    
+                    <div class="w-full flex items-end justify-between mt-auto">
+                        <span class="font-sans font-extrabold leading-none ${numberSizeClass} ${numberColorClass}">
+                            ${item.day}
+                        </span>
+                        ${alreadyOpened && !isAdminMode ? `<span class="text-[9px] uppercase tracking-widest font-semibold opacity-60 ${numberColorClass}">Aperto</span>` : ''}
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        /* ==========================================================================
+           INTERAZIONE CON LE CASELLE
+           ========================================================================== */
+        function handleCardClick(dayNumber, cardElement) {
+            const unlocked = isDayUnlocked(dayNumber);
+
+            if (!unlocked) {
+                cardElement.classList.remove('shake-anim');
+                void cardElement.offsetWidth;
+                cardElement.classList.add('shake-anim');
+                
+                showToast(`Non sbirciare! Questa sorpresa si sblocca il ${dayNumber} Dicembre ✨`);
+                return;
+            }
+
+            // Animazione 3D di apertura dello sportellino prima di mostrare la sorpresa
+            cardElement.classList.remove('door-opening-anim');
+            void cardElement.offsetWidth;
+            cardElement.classList.add('door-opening-anim');
+
+            if (!isAdminMode && !openedDays.includes(dayNumber)) {
+                triggerGoldConfetti();
+                markDayAsOpened(dayNumber);
+                setTimeout(() => renderGrid(), 400);
+            }
+
+            setTimeout(() => {
+                openDayModal(dayNumber);
+            }, 220);
+        }
+
+        function openDayModal(dayNumber) {
+            const dayData = appData.days.find(d => d.day === dayNumber);
+            if (!dayData) return;
+
+            currentEditingDay = dayNumber;
+
+            document.getElementById('modalDayBadge').textContent = dayData.day;
+            document.getElementById('modalTitle').textContent = dayData.title;
+            document.getElementById('modalMessage').textContent = dayData.message;
+
+            // Gestione Immagine
+            const imgContainer = document.getElementById('modalImageContainer');
+            const imgEl = document.getElementById('modalImage');
+            if (dayData.image && dayData.image.trim() !== '') {
+                imgEl.src = dayData.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+                imgEl.src = '';
+            }
+
+            // Gestione Link
+            const linkContainer = document.getElementById('modalLinkContainer');
+            const linkEl = document.getElementById('modalLink');
+            const linkLabelEl = document.getElementById('modalLinkLabel');
+            if (dayData.linkUrl && dayData.linkUrl.trim() !== '') {
+                linkEl.href = dayData.linkUrl;
+                linkLabelEl.textContent = dayData.linkLabel && dayData.linkLabel.trim() !== '' 
+                    ? dayData.linkLabel 
+                    : 'Scopri la sorpresa';
+                linkContainer.classList.remove('hidden');
+            } else {
+                linkContainer.classList.add('hidden');
+            }
+
+            // Mostra bottone modifica se in Admin Mode
+            const editBtn = document.getElementById('modalEditTrigger');
+            if (isAdminMode) {
+                editBtn.classList.remove('hidden');
+            } else {
+                editBtn.classList.add('hidden');
+            }
+
+            document.getElementById('dayModal').classList.remove('modal-hidden');
+        }
+
+        function closeDayModal() {
+            document.getElementById('dayModal').classList.add('modal-hidden');
+        }
+
+        /* ==========================================================================
+           MODALITÀ CREATORE / EDITOR
+           ========================================================================== */
+        function toggleAdminMode() {
+            isAdminMode = !isAdminMode;
+            const banner = document.getElementById('adminBanner');
+            const toggleText = document.getElementById('adminToggleText');
+
+            if (isAdminMode) {
+                banner.classList.remove('hidden');
+                toggleText.textContent = "Esci da Modalità Creatore";
+                showToast("Modalità Creatore attiva: clicca su qualsiasi casella per personalizzarla.");
+            } else {
+                banner.classList.add('hidden');
+                toggleText.textContent = "Modalità Creatore";
+                closeEditorModal();
+                closeHeaderEditor();
+            }
+            renderGrid();
+        }
+
+        function switchToDayEditor() {
+            closeDayModal();
+            openDayEditor(currentEditingDay);
+        }
+
+        function openDayEditor(dayNumber) {
+            const dayData = appData.days.find(d => d.day === dayNumber);
+            if (!dayData) return;
+
+            currentEditingDay = dayNumber;
+            document.getElementById('editorDayNumber').textContent = dayNumber;
+            document.getElementById('editTitle').value = dayData.title;
+            document.getElementById('editMessage').value = dayData.message;
+            document.getElementById('editImageUrl').value = dayData.image || '';
+            document.getElementById('editLinkUrl').value = dayData.linkUrl || '';
+            document.getElementById('editLinkLabel').value = dayData.linkLabel || '';
+            document.getElementById('imageUploadStatus').textContent = '';
+
+            document.getElementById('editorModal').classList.remove('modal-hidden');
+        }
+
+        function closeEditorModal() {
+            document.getElementById('editorModal').classList.add('modal-hidden');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('imageUploadStatus');
+            statusEl.textContent = "Ottimizzazione foto...";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 900;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('editImageUrl').value = dataUrl;
+                    statusEl.textContent = "Foto caricata!";
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImageInput() {
+            document.getElementById('editImageUrl').value = '';
+            document.getElementById('editImageFile').value = '';
+            document.getElementById('imageUploadStatus').textContent = 'Foto rimossa';
+        }
+
+        function saveDayEdit(event) {
+            event.preventDefault();
+            const dayIndex = appData.days.findIndex(d => d.day === currentEditingDay);
+            if (dayIndex === -1) return;
+
+            appData.days[dayIndex] = {
+                day: currentEditingDay,
+                title: document.getElementById('editTitle').value.trim(),
+                message: document.getElementById('editMessage').value.trim(),
+                image: document.getElementById('editImageUrl').value.trim(),
+                linkUrl: document.getElementById('editLinkUrl').value.trim(),
+                linkLabel: document.getElementById('editLinkLabel').value.trim()
+            };
+
+            saveAppData();
+            renderGrid();
+            closeEditorModal();
+            showToast(`Giorno ${currentEditingDay} salvato con successo!`);
+        }
+
+        function openHeaderEditor() {
+            document.getElementById('editHeaderSubtitle').value = appData.header.subtitle;
+            document.getElementById('editHeaderTitle').value = appData.header.title;
+            document.getElementById('editHeaderIntro').value = appData.header.intro;
+            document.getElementById('editHeaderSignature').value = appData.header.signature || "";
+            document.getElementById('editEnvelopeNote').value = appData.header.envelopeNote || "";
+            document.getElementById('headerEditorModal').classList.remove('modal-hidden');
+        }
+
+        function closeHeaderEditor() {
+            document.getElementById('headerEditorModal').classList.add('modal-hidden');
+        }
+
+        function saveHeaderEdit(event) {
+            event.preventDefault();
+            appData.header.subtitle = document.getElementById('editHeaderSubtitle').value.trim();
+            appData.header.title = document.getElementById('editHeaderTitle').value.trim();
+            appData.header.intro = document.getElementById('editHeaderIntro').value.trim();
+            appData.header.signature = document.getElementById('editHeaderSignature').value.trim();
+            appData.header.envelopeNote = document.getElementById('editEnvelopeNote').value.trim();
+
+            saveAppData();
+            renderHeader();
+            closeHeaderEditor();
+            showToast("Testi e busta aggiornati!");
+        }
+
+        /* ==========================================================================
+           ESPORTAZIONE FILE HTML PRONTO DA HOSTARE (es. GitHub Pages)
+           ========================================================================== */
+        function exportReadyHTML() {
+            try {
+                // Ripristina temporaneamente lo stato chiuso della busta prima di esportare
+                const overlay = document.getElementById('envelopeOverlay');
+                const wrapper = document.getElementById('envelopeCard');
+                const mainCal = document.getElementById('mainCalendarWrapper');
+                
+                const wasOpened = overlay.classList.contains('opened-fade');
+                overlay.classList.remove('opened-fade');
+                wrapper.classList.remove('is-opening');
+                mainCal.classList.remove('is-visible');
+
+                let currentHTML = document.documentElement.outerHTML;
+                
+                // Ripristina la vista corrente dell'utente dopo aver catturato il sorgente
+                if (wasOpened) {
+                    overlay.classList.add('opened-fade');
+                    wrapper.classList.add('is-opening');
+                    mainCal.classList.add('is-visible');
+                }
+
+                const serializedConfig = JSON.stringify(appData, null, 4);
+                const regex = /\/\*CONFIG_START\*\/[\s\S]*?\/\*CONFIG_END\*\//;
+                const updatedHTML = "<!DOCTYPE html>\n" + currentHTML.replace(
+                    regex, 
+                    `/*CONFIG_START*/${serializedConfig}/*CONFIG_END*/`
+                );
+
+                const blob = new Blob([updatedHTML], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'index.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast("File index.html scaricato! Pronto per essere condiviso.");
+            } catch (err) {
+                console.error(err);
+                showToast("Errore durante l'esportazione del file.");
+            }
+        }
+
+        /* ==========================================================================
+           EFFETTI VISIVI (CORIANDOLI & PARTICELLE DORATE AMBIENTALI)
+           ========================================================================== */
+        function createAmbientGoldDust() {
+            const container = document.getElementById('particlesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const count = 28;
+            for (let i = 0; i < count; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'gold-dust';
+                const size = (Math.random() * 3 + 1.5).toFixed(1);
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                dot.style.left = `${(Math.random() * 100).toFixed(1)}vw`;
+                dot.style.top = `${(Math.random() * 100).toFixed(1)}vh`;
+                dot.style.setProperty('--dur', `${(Math.random() * 5 + 4).toFixed(1)}s`);
+                dot.style.setProperty('--delay', `${(Math.random() * 4).toFixed(1)}s`);
+                container.appendChild(dot);
+            }
+        }
+
+        function triggerGoldConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 55,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#D4AF37', '#F5E4B7', '#D94532', '#FAF6F0'],
+                    disableForReducedMotion: true
+                });
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            
+            toastMsg.textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 3500);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Inizializzazione al caricamento
+        document.addEventListener('DOMContentLoaded', () => {
+            createAmbientGoldDust();
+            renderHeader();
+            renderGrid();
+
+            // Supporto tastiera per la busta iniziale
+            const envCard = document.getElementById('envelopeCard');
+            if (envCard) {
+                envCard.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openEnvelope();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
