@@ -105,6 +105,7 @@
             aspect-ratio: 1.45 / 1;
             transform-style: preserve-3d;
             transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+            touch-action: manipulation;
         }
 
         .envelope-wrapper:hover:not(.is-opening) {
@@ -119,6 +120,7 @@
             border-radius: 18px;
             border: 1px solid rgba(212, 175, 55, 0.35);
             box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85), inset 0 0 30px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
         }
 
         /* Foglio della lettera interna che scorre verso l'alto */
@@ -141,6 +143,7 @@
             z-index: 2;
             transition: transform 0.95s cubic-bezier(0.34, 1.56, 0.64, 1);
             border: 1px solid rgba(212, 175, 55, 0.4);
+            pointer-events: none;
         }
 
         .envelope-wrapper.is-opening .letter-sheet {
@@ -194,6 +197,7 @@
             right: 0;
             height: 62%;
             z-index: 5;
+            pointer-events: none;
             transform-origin: top center;
             transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.1s linear 0.35s;
             background: linear-gradient(180deg, #5E1B23 0%, #421117 100%);
@@ -213,10 +217,10 @@
             position: absolute;
             top: 52%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            width: 74px;
-            height: 74px;
+            transform: translate(-50%, -50%) translateZ(20px);
+            z-index: 20;
+            width: 78px;
+            height: 78px;
             border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #F7E7B4 0%, #D4AF37 45%, #8F6B14 100%);
             box-shadow: 
@@ -227,6 +231,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
             border: 3px solid rgba(255, 243, 200, 0.45);
         }
@@ -237,16 +242,17 @@
             inset: 6px;
             border-radius: 50%;
             border: 1.5px dashed rgba(92, 65, 6, 0.55);
+            pointer-events: none;
         }
 
         .wax-seal:hover {
-            transform: translate(-50%, -50%) scale(1.08);
+            transform: translate(-50%, -50%) translateZ(20px) scale(1.08);
             box-shadow: 0 14px 30px rgba(212, 175, 55, 0.45), inset 0 2px 5px rgba(255, 255, 255, 0.85);
         }
 
         .envelope-wrapper.is-opening .wax-seal {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.4);
+            transform: translate(-50%, -50%) translateZ(20px) scale(0.4);
             pointer-events: none;
         }
 
@@ -362,7 +368,7 @@
         </div>
 
         <!-- Busta Interattiva 3D -->
-        <div id="envelopeCard" onclick="openEnvelope()" class="envelope-wrapper cursor-pointer select-none" role="button" tabindex="0" aria-label="Apri la busta del calendario dell'avvento">
+        <div id="envelopeCard" class="envelope-wrapper cursor-pointer select-none" role="button" tabindex="0" aria-label="Apri la busta del calendario dell'avvento">
             <!-- Retro Busta -->
             <div class="envelope-back"></div>
 
@@ -384,15 +390,15 @@
             <div class="envelope-top-flap"></div>
 
             <!-- Sigillo di Ceralacca Dorata -->
-            <div class="wax-seal" title="Apri la lettera">
-                <svg class="w-8 h-8 text-burgundy-deep drop-shadow-xs" fill="currentColor" viewBox="0 0 24 24">
+            <button type="button" id="waxSealBtn" class="wax-seal" title="Apri la lettera" aria-label="Rompi il sigillo dorato e apri la lettera">
+                <svg class="w-8 h-8 text-burgundy-deep drop-shadow-xs pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-            </div>
+            </button>
         </div>
 
         <!-- Azione rapida per saltare o aprire -->
-        <button onclick="openEnvelope()" class="mt-10 text-xs uppercase tracking-[0.22em] text-gold/80 hover:text-gold transition py-2 px-4 rounded-full border border-gold/25 hover:border-gold/60 bg-burgundy-card/40">
+        <button type="button" id="openEnvelopeFallbackBtn" class="mt-10 text-xs uppercase tracking-[0.22em] text-gold/80 hover:text-gold transition py-2.5 px-5 rounded-full border border-gold/25 hover:border-gold/60 bg-burgundy-card/40 cursor-pointer">
             Apri la letterina ✨
         </button>
     </div>
@@ -459,8 +465,8 @@
                     <span>✉️</span>
                     <span>Rivedi la letterina</span>
                 </button>
-                <span class="opacity-30">•</span>
-                <button onclick="toggleAdminMode()" id="adminToggleBtn" class="inline-flex items-center gap-1.5 hover:text-festive-cream transition py-1 px-3 rounded-full hover:bg-burgundy-card/60" title="Area Creatore / Personalizza">
+                <span id="adminSep" class="opacity-30 hidden">•</span>
+                <button onclick="toggleAdminMode()" id="adminToggleBtn" class="hidden inline-flex items-center gap-1.5 hover:text-festive-cream transition py-1 px-3 rounded-full hover:bg-burgundy-card/60" title="Area Creatore / Personalizza">
                     <svg class="w-3.5 h-3.5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                     <span id="adminToggleText">Modalità Creatore</span>
                 </button>
@@ -642,9 +648,9 @@
         const INITIAL_CONFIG = /*CONFIG_START*/{
             header: {
                 subtitle: "PER",
-                title: "Amore Mio",
-                intro: "Questo dicembre non aprirai cioccolatini, ma 24 piccoli pezzi di noi. Una porta ogni mattina, e niente trucchi (anche se non potresti comunque).",
-                signature: "Con affetto, sempre tuo.",
+                title: "Mariku",
+                intro: "Mi raccomando: ogni mattina alle ore 6:00 si sblocca una casella, fino al 24. Aprila e poi scarta la carta. Bacio",
+                signature: "NON BARARE!",
                 envelopeNote: "24 piccoli pensieri d'amore ti aspettano qui dentro. Apri una porta ogni giorno fino a Natale..."
             },
             days: [
@@ -716,8 +722,8 @@
         /* ==========================================================================
            STATO DELL'APPLICAZIONE
            ========================================================================== */
-        const STORAGE_KEY = 'advent_calendar_bento_v2';
-        const OPENED_KEY = 'advent_calendar_opened_v2';
+        const STORAGE_KEY = 'advent_calendar_bento_v3';
+        const OPENED_KEY = 'advent_calendar_opened_v3';
         
         let appData = loadAppData();
         let openedDays = loadOpenedDays();
@@ -810,17 +816,14 @@
         /* ==========================================================================
            LOGICA DI SBLOCCO DATA REALE (1 - 24 DICEMBRE)
            ========================================================================== */
+        const UNLOCK_YEAR = 2026;   // anno del calendario
+        const UNLOCK_HOUR = 6;      // ora di sblocco ogni mattina (6:00)
+
         function isDayUnlocked(dayNumber) {
             if (isAdminMode) return true;
-
-            const now = new Date();
-            const currentMonth = now.getMonth(); // 11 = Dicembre
-            const currentDate = now.getDate();
-
-            if (currentMonth === 11) {
-                return dayNumber <= currentDate;
-            }
-            return false;
+            // la casella N si sblocca alle 6:00 del N dicembre 2026
+            const unlockAt = new Date(UNLOCK_YEAR, 11, dayNumber, UNLOCK_HOUR, 0, 0);
+            return new Date() >= unlockAt;
         }
 
         /* ==========================================================================
@@ -848,7 +851,8 @@
                 const item = appData.days.find(d => d.day === slot.day) || { day: slot.day, title: `Giorno ${slot.day}`, message: "" };
                 const unlocked = isDayUnlocked(item.day);
                 const alreadyOpened = openedDays.includes(item.day);
-                const isToday = (new Date().getMonth() === 11 && new Date().getDate() === item.day);
+                const nowD = new Date();
+                const isToday = unlocked && !alreadyOpened && nowD.getFullYear() === UNLOCK_YEAR && nowD.getMonth() === 11 && nowD.getDate() === item.day;
 
                 const card = document.createElement('button');
                 card.type = 'button';
@@ -891,7 +895,7 @@
                 } else if (alreadyOpened) {
                     topRightIndicator = `<span class="w-2 h-2 rounded-full ${slot.theme === 'cream' || slot.theme === 'gold' ? 'bg-burgundy/50' : 'bg-gold'}"></span>`;
                 } else if (!unlocked) {
-                    topRightIndicator = `<svg class="w-3.5 h-3.5 opacity-35 ${numberColorClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`;
+                    topRightIndicator = `<svg class="w-5 h-5 sm:w-6 sm:h-6 opacity-80 ${numberColorClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`;
                 } else {
                     topRightIndicator = `<span class="inline-block w-2 h-2 rounded-full bg-gold animate-ping"></span>`;
                 }
@@ -934,7 +938,7 @@
                 void cardElement.offsetWidth;
                 cardElement.classList.add('shake-anim');
                 
-                showToast(`Non sbirciare! Questa sorpresa si sblocca il ${dayNumber} Dicembre ✨`);
+                showToast(`NON BARARE! Questa casella si sblocca il ${dayNumber} dicembre alle ${UNLOCK_HOUR}:00 🔒`);
                 return;
             }
 
@@ -1245,15 +1249,43 @@
             renderHeader();
             renderGrid();
 
-            // Supporto tastiera per la busta iniziale
+            // Modalità Creatore nascosta: visibile solo aprendo il link con #creatore in fondo
+            if (location.hash === '#creatore') {
+                document.getElementById('adminToggleBtn').classList.remove('hidden');
+                document.getElementById('adminSep').classList.remove('hidden');
+            }
+
+            // Ogni 20 secondi controlla se è scattata l'ora di sblocco
+            setInterval(() => {
+                if (!isAdminMode && document.getElementById('dayModal').classList.contains('modal-hidden')) renderGrid();
+            }, 20000);
+
+            // Event listener diretti e affidabili per busta, sigillo e pulsante
             const envCard = document.getElementById('envelopeCard');
+            const waxSealBtn = document.getElementById('waxSealBtn');
+            const fallbackBtn = document.getElementById('openEnvelopeFallbackBtn');
+
+            const triggerOpen = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                }
+                openEnvelope();
+            };
+
+            if (waxSealBtn) {
+                waxSealBtn.addEventListener('click', triggerOpen);
+            }
             if (envCard) {
+                envCard.addEventListener('click', triggerOpen);
                 envCard.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         openEnvelope();
                     }
                 });
+            }
+            if (fallbackBtn) {
+                fallbackBtn.addEventListener('click', triggerOpen);
             }
         });
     </script>
