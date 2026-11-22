@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Per Mariku</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#2b0b0e; --wine:#4a151b; --wine2:#681e26; --red:#d94532; --cream:#faf6f0; --ink:#2b0b0e;
+  --gold:#d4af37; --gold1:#f5e4b7;
+  --w:min(94vw,720px); --gap:9px;
+  --row:calc((var(--w) - 3 * var(--gap)) / 4 * .78);
+  --sans:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --serif:"Playfair Display",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0}
+body{
+  min-height:100vh;color:var(--cream);font-family:var(--sans);
+  background:var(--bg) radial-gradient(circle at 50% 0,rgba(104,30,38,.5),transparent 65%);
+  background-image:radial-gradient(circle at 50% 0,rgba(104,30,38,.5),transparent 65%),radial-gradient(rgba(212,175,55,.25) 1px,transparent 1.4px);
+  background-size:100% 100%,40px 40px;
+  padding:max(30px,env(safe-area-inset-top)) 0 max(40px,env(safe-area-inset-bottom));
+  -webkit-tap-highlight-color:transparent;
+}
+body.chiuso{overflow:hidden;height:100vh}
+
+/* ============ BUSTA ============ */
+#busta{position:fixed;inset:0;z-index:50;background:#220609;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:20px;gap:30px;transition:opacity .9s ease}
+#busta.via{opacity:0;pointer-events:none}
+.hint{text-align:center}
+.hint small{display:block;color:var(--gold);font-weight:800;letter-spacing:.25em;font-size:.7rem;margin-bottom:6px}
+.hint p{font:italic 1rem var(--serif);opacity:.85}
+.env{position:relative;width:min(88vw,400px);aspect-ratio:1.45;perspective:1000px;cursor:pointer;
+  background:none;border:0;padding:0;color:inherit}
+.env>*{position:absolute;inset:0;pointer-events:none}
+.env .dorso{background:linear-gradient(145deg,#3d1015,#26070a);border-radius:16px;border:1px solid rgba(212,175,55,.4);
+  box-shadow:0 30px 60px -12px rgba(0,0,0,.85)}
+.env .foglio{inset:8% 6%;background:linear-gradient(#faf6f0,#efe7dc);color:var(--ink);border-radius:10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px;
+  border:1px solid rgba(212,175,55,.5);transition:transform .95s cubic-bezier(.34,1.4,.5,1);z-index:2}
+.foglio b{font-size:.62rem;letter-spacing:.25em;color:#9c7a1c}
+.foglio h2{font:800 2.3rem/1.1 var(--sans);letter-spacing:-.03em;margin:2px 0 6px}
+.foglio i{display:block;width:34px;height:2px;background:var(--gold);margin-bottom:8px}
+.foglio p{font-size:.78rem;line-height:1.4;max-width:230px;opacity:.8}
+.env .lati{z-index:3}
+.lati::before,.lati::after{content:"";position:absolute;inset:0}
+.lati::before{background:linear-gradient(135deg,#4f161d,#380e13);clip-path:polygon(0 0,52% 54%,0 100%)}
+.lati::after{background:linear-gradient(225deg,#4b141b,#340c11);clip-path:polygon(100% 0,48% 54%,100% 100%)}
+.env .fondo{z-index:4;background:linear-gradient(0deg,#3a0e13,#561920);clip-path:polygon(0 100%,50% 46%,100% 100%)}
+.env .patta{bottom:auto;height:62%;z-index:5;transform-origin:top center;
+  background:linear-gradient(#5e1b23,#421117);clip-path:polygon(0 0,100% 0,50% 96%);
+  transition:transform .75s cubic-bezier(.4,0,.2,1),z-index 0s linear .3s}
+.env .sigillo{inset:auto;top:52%;left:50%;width:76px;height:76px;margin:-38px 0 0 -38px;z-index:20;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#f7e7b4,#d4af37 45%,#8f6b14);
+  border:3px solid rgba(255,243,200,.45);box-shadow:0 10px 25px rgba(0,0,0,.6),inset 0 2px 4px rgba(255,255,255,.7);
+  display:flex;align-items:center;justify-content:center;font-size:1.9rem;color:var(--ink);
+  transition:transform .45s,opacity .4s;animation:pulsa 2s ease-in-out infinite}
+@keyframes pulsa{50%{transform:scale(1.09)}}
+.env.apri .patta{transform:rotateX(180deg);z-index:1}
+.env.apri .foglio{transform:translateY(-58%) scale(1.04);z-index:6}
+.env.apri .sigillo{opacity:0;transform:scale(.4);animation:none}
+.salta{background:rgba(74,21,27,.5);color:var(--gold1);border:1px solid rgba(212,175,55,.4);border-radius:99px;
+  padding:11px 22px;font:700 .8rem var(--sans);letter-spacing:.18em;cursor:pointer}
+
+/* ============ INTESTAZIONE ============ */
+.cal{width:var(--w);margin:0 auto;opacity:0;transform:translateY(24px);transition:opacity .9s,transform .9s}
+.cal.on{opacity:1;transform:none}
+header{text-align:center;margin-bottom:28px}
+header small{color:var(--gold);font-weight:800;letter-spacing:.28em;font-size:.75rem}
+h1{font-weight:800;font-size:clamp(3.4rem,16vw,6.4rem);line-height:1;letter-spacing:-.04em;margin:6px 0 14px}
+.intro{max-width:44ch;margin:0 auto 10px;line-height:1.5;opacity:.9;font-size:.95rem}
+.firma{font:italic 700 1.35rem var(--serif);color:var(--gold)}
+.conta{margin-top:14px;font-size:.85rem;opacity:.6}
+
+/* ============ MOSAICO 3D ============ */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:var(--row);grid-auto-flow:dense;
+  gap:var(--gap);perspective:1500px}
+.c2{grid-column:span 2}.r2{grid-row:span 2}.c4{grid-column:span 4}
+.t{position:relative;border:0;padding:0;background:none;cursor:pointer;font:inherit;color:inherit;
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .25s ease-out}
+.dentro,.porta{position:absolute;inset:0;border-radius:18px}
+.dentro{background:radial-gradient(circle at 50% 40%,#fff6df,#f0cf87 75%);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:clamp(1.6rem,7vw,2.8rem);
+  box-shadow:inset 0 4px 14px rgba(70,30,10,.35)}
+.porta{padding:12px 14px;display:flex;align-items:flex-end;justify-content:space-between;
+  font-weight:800;font-size:clamp(1.9rem,8.5vw,3rem);letter-spacing:-.04em;line-height:.9;
+  transform-origin:left center;backface-visibility:hidden;
+  transition:transform .9s cubic-bezier(.5,0,.2,1),box-shadow .3s;box-shadow:0 8px 18px rgba(0,0,0,.4)}
+.t:not(.aperto):not(.chiuso):hover .porta{box-shadow:0 16px 30px rgba(0,0,0,.55)}
+.cream .porta{background:var(--cream);color:var(--red)}
+.red .porta{background:var(--red);color:var(--cream)}
+.wine .porta{background:var(--wine);color:var(--cream);border:1px solid rgba(212,175,55,.2)}
+.gold .porta{background:linear-gradient(135deg,#d5b358,#f3e2a9 32%,#c99e38 65%,#e7ce7d);color:var(--ink);
+  font-size:clamp(4rem,19vw,7rem);overflow:hidden}
+.gold .porta::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%) -150% 0/250% 100%;
+  animation:shine 4s ease-in-out infinite}
+@keyframes shine{to{background-position:150% 0}}
+.porta em{position:absolute;top:12px;left:14px;font:italic 700 .85rem var(--serif);letter-spacing:0;opacity:.85}
+.porta .lock{position:absolute;top:9px;right:10px;font-size:clamp(1.05rem,4.2vw,1.5rem);letter-spacing:0;display:none}
+.t.chiuso .lock{display:block}
+.t.chiuso .porta{filter:brightness(.9)}
+.t.aperto .porta{transform:rotateY(-118deg)}
+.t.aperto{--rx:0deg!important;--ry:0deg!important}
+.tremo{animation:tremo .45s}
+@keyframes tremo{25%{transform:translateX(-6px) rotate(-2deg)}75%{transform:translateX(6px) rotate(2deg)}}
+.t:focus-visible,.card button:focus-visible{outline:3px solid var(--gold1);outline-offset:3px}
+
+/* ============ MESSAGGIO ============ */
+.modal{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(15,5,8,.8);perspective:1400px}
+.modal.on{display:flex}
+.card{width:min(100%,470px);max-height:88vh;overflow:auto;background:var(--cream);color:var(--ink);
+  border-radius:24px;border:2px solid rgba(212,175,55,.5);padding:26px 24px 22px;text-align:center;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);transform-origin:center bottom;animation:flip .8s cubic-bezier(.2,.9,.2,1) both}
+@keyframes flip{from{opacity:0;transform:rotateX(-85deg) translateY(60px) scale(.8)}}
+.card .n{display:inline-flex;width:46px;height:46px;border-radius:13px;background:var(--red);color:var(--cream);
+  font-weight:800;font-size:1.3rem;align-items:center;justify-content:center}
+.card .m{display:block;font-size:.72rem;letter-spacing:.2em;opacity:.6;font-weight:800;margin:6px 0 12px}
+.card h2{font:italic 500 1.7rem/1.2 var(--serif);margin-bottom:10px}
+.card p{line-height:1.6;white-space:pre-line}
+.card img{width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin-bottom:14px}
+.card a{display:inline-block;margin-top:16px;padding:12px 22px;border-radius:14px;background:var(--red);color:#fff;font-weight:800;text-decoration:none}
+.card button{margin-top:18px;width:100%;padding:13px;border:0;border-radius:13px;background:var(--ink);color:var(--cream);font:800 1rem var(--sans);cursor:pointer}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:60;pointer-events:none;
+  background:var(--bg);border:1px solid var(--gold);padding:12px 18px;border-radius:16px;font-size:.9rem;
+  max-width:90vw;text-align:center;transition:.3s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body class="chiuso">
+
+<!-- ================= LETTERINA ================= -->
+<div id="busta">
+  <div class="hint" id="hint"><small>UNA CONSEGNA SPECIALE</small><p>Tocca il sigillo dorato per aprire la tua lettera</p></div>
+  <button class="env" id="env" type="button" aria-label="Apri la busta">
+    <div class="dorso"></div>
+    <div class="foglio">
+      <b id="bEye">PER</b><h2 id="bNome"></h2><i></i><p id="bNota"></p>
+    </div>
+    <div class="lati"></div><div class="fondo"></div><div class="patta"></div>
+    <div class="sigillo">♥</div>
+  </button>
+  <button class="salta" id="salta" type="button">Apri la letterina ✨</button>
+</div>
+
+<!-- ================= CALENDARIO ================= -->
+<div class="cal" id="cal">
+  <header>
+    <small id="hSub"></small>
+    <h1 id="hNome"></h1>
+    <p class="intro" id="hIntro"></p>
+    <p class="firma" id="hFirma"></p>
+    <p class="conta" id="hConta"></p>
+  </header>
+  <main class="grid" id="grid"></main>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="card" id="card"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   ✏️  MODIFICA SOLO QUI
+   ===================================================================== */
+var CONFIG = {
+  sopra: "PER",
+  nome: "Mariku",
+  notaBusta: "24 piccoli pensieri ti aspettano qui dentro…",
+  intro: "Mi raccomando: ogni mattina alle ore 6:00 si sblocca una casella, fino al 24. Aprila e poi scarta la carta. Bacio",
+  firma: "NON BARARE!",
+  anno: 2026,        // anno del calendario
+  ora: 6             // ora di sblocco ogni mattina
+};
+
+/* Per ogni giorno: emoji, titolo, testo (\n = a capo), foto (es. "foto/05.jpg"), link, etichetta del link */
+var GIORNI = {
+  1:{e:"💌",t:"L'inizio della magia",m:"Benvenuta nel tuo calendario dell'avvento personale. Ogni giorno fino a Natale troverai qui un piccolo pensiero."},
+  2:{e:"🎵",t:"La nostra colonna sonora",m:"Ci sono canzoni che appena partono mi fanno pensare a te. Metti le cuffie e premi play.",link:"https://open.spotify.com",etic:"Ascolta la canzone"},
+  3:{e:"✨",t:"Un piccolo dettaglio",m:"Amo il modo in cui ti brillano gli occhi quando parli di qualcosa che ti appassiona."},
+  4:{e:"🍫",t:"Pausa dolcezza",m:"Oggi il pacchetto nasconde qualcosa per addolcire la tua giornata. Goditelo tutto!"},
+  5:{e:"📸",t:"Un ricordo speciale",m:"Ripensavo a quanto abbiamo riso quel giorno. È uno dei miei momenti preferiti insieme a te."},
+  6:{e:"🛁",t:"Solo per te",m:"Prenditi dieci minuti oggi solo per te stessa."},
+  7:{e:"🎄",t:"Una settimana insieme",m:"Siamo già al settimo giorno! Spero che queste sorprese ti strappino un sorriso ogni mattina."},
+  8:{e:"❄️",t:"Atmosfera d'inverno",m:"Fuori fa freddo, ma stare con te è sempre il posto più caldo del mondo."},
+  9:{e:"💭",t:"Un pensiero veloce",m:"Non serve un motivo speciale per dirti che sei la parte migliore delle mie giornate."},
+  10:{e:"🍷",t:"Indizio per stasera",m:"Preparati per una serata diversa dal solito. Non fare programmi!"},
+  11:{e:"🤍",t:"Piccole cose",m:"Grazie per esserci sempre, anche nelle giornate più complicate."},
+  12:{e:"🎁",t:"Metà strada",m:"Dodici giorni passati, dodici ancora da scoprire. Il bello deve ancora venire."},
+  13:{e:"🖼️",t:"Una foto del cuore",m:"Guarda questo scatto: racconta perfettamente quanto stiamo bene insieme."},
+  14:{e:"🌹",t:"Il tuo profumo",m:"Basta un dettaglio per farmi venire voglia di abbracciarti."},
+  15:{e:"🧣",t:"Coccole d'inverno",m:"Il regalo di oggi accompagna i tuoi momenti di relax."},
+  16:{e:"📣",t:"Sempre dalla tua parte",m:"Qualunque sia il tuo prossimo sogno, io faccio sempre il tifo per te."},
+  17:{e:"⏳",t:"Manca una settimana",m:"Il countdown entra nel vivo. Spero che questo dicembre ti piaccia quanto piace a me passarlo con te."},
+  18:{e:"🌠",t:"Un desiderio",m:"Se potessi esprimere un desiderio per l'anno prossimo, sarebbe continuare a collezionare momenti così."},
+  19:{e:"👏",t:"Complimenti",m:"Sei incredibile in tutto ciò che fai, anche quando pensi di non esserlo abbastanza."},
+  20:{e:"🕯️",t:"Quasi Natale",m:"L'aria di festa si fa sentire. Apri il pacchetto di oggi con calma!"},
+  21:{e:"🌙",t:"Solstizio d'inverno",m:"Il giorno più corto dell'anno, ma con te ogni minuto vale doppio."},
+  22:{e:"🔔",t:"Due giorni alla Vigilia",m:"Siamo agli sgoccioli, ma le sorprese non sono ancora finite."},
+  23:{e:"🤫",t:"L'attesa",m:"Domani è l'ultima casella. Grazie per aver aperto ogni giorno questo piccolo spazio dedicato a noi."},
+  24:{e:"❤️",t:"Il Grande Giorno, amore mio",m:"Siamo arrivati al 24 dicembre. Il regalo più grande per me resta averti accanto ogni giorno. Buon Natale a noi!"}
+};
+
+/* Disposizione a mosaico: giorno, forma (c2 = larga, r2 = alta, c2 r2 = grande, c4 = tutta la riga), colore */
+var MOSAICO = [
+  [7,"","cream"],[15,"","wine"],[1,"c2","red"],
+  [24,"c2 r2","gold"],[4,"","cream"],[22,"","cream"],[20,"","wine"],[13,"r2","cream"],
+  [9,"c2","red"],[18,"","cream"],[2,"","cream"],
+  [11,"c2","red"],[6,"c2","wine"],[19,"r2","red"],
+  [14,"","cream"],[3,"","wine"],[21,"c2","cream"],
+  [8,"c2","cream"],[16,"","wine"],[5,"","red"],
+  [12,"","wine"],[17,"c2","red"],[10,"c2","cream"],
+  [23,"c4","wine"]
+];
+
+/* =====================================================================
+   Da qui in giù è il motore: non serve toccarlo
+   ===================================================================== */
+function $(id){ return document.getElementById(id); }
+var ANTEPRIMA = location.hash === "#anteprima";   // apri il sito con #anteprima per vedere tutto sbloccato
+
+$("bEye").textContent = CONFIG.sopra; $("bNome").textContent = CONFIG.nome; $("bNota").textContent = CONFIG.notaBusta;
+$("hSub").textContent = CONFIG.sopra; $("hNome").textContent = CONFIG.nome;
+$("hIntro").textContent = CONFIG.intro; $("hFirma").textContent = CONFIG.firma;
+document.title = CONFIG.sopra + " " + CONFIG.nome;
+
+var KEY = "avvento-" + CONFIG.anno, aperti = [];
+try { aperti = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) {}
+function salva(){ try { localStorage.setItem(KEY, JSON.stringify(aperti)); } catch (e) {} }
+
+/* ---- busta ---- */
+var gia = false;
+function apriBusta(){
+  if (gia) return; gia = true;
+  $("env").classList.add("apri");
+  $("hint").style.opacity = "0";
+  setTimeout(function(){
+    $("busta").classList.add("via");
+    document.body.classList.remove("chiuso");
+    $("cal").classList.add("on");
+    setTimeout(function(){ $("busta").style.display = "none"; }, 950);
+  }, 1300);
+}
+$("env").addEventListener("click", apriBusta);
+$("salta").addEventListener("click", apriBusta);
+
+/* ---- sblocco: ore 6:00 del giorno N di dicembre ---- */
+function sbloccato(g){ return ANTEPRIMA || new Date() >= new Date(CONFIG.anno, 11, g, CONFIG.ora, 0, 0); }
+
+function toast(t){
+  var el = $("toast"); el.textContent = t; el.classList.add("on");
+  clearTimeout(toast.h); toast.h = setTimeout(function(){ el.classList.remove("on"); }, 3200);
+}
+
+/* ---- mosaico ---- */
+function disegna(){
+  var grid = $("grid"); grid.innerHTML = "";
+  MOSAICO.forEach(function(s, i){
+    var g = s[0], b = document.createElement("button");
+    b.type = "button";
+    b.className = "t " + s[1] + " " + s[2] + (aperti.indexOf(g) > -1 ? " aperto" : "") + (sbloccato(g) ? "" : " chiuso");
+    b.setAttribute("aria-label", "Casella " + g);
+    b.innerHTML = '<span class="dentro">' + (GIORNI[g] ? GIORNI[g].e : "🎁") + '</span>' +
+      '<span class="porta">' + (g === 24 ? "<em>Il gran giorno</em>" : "") + '<span>' + g + '</span><span class="lock">🔒</span></span>';
+    b.addEventListener("pointermove", function(e){
+      if (b.classList.contains("aperto")) return;
+      var r = b.getBoundingClientRect();
+      b.style.setProperty("--ry", ((e.clientX - r.left) / r.width - .5) * 20 + "deg");
+      b.style.setProperty("--rx", -((e.clientY - r.top) / r.height - .5) * 20 + "deg");
+    });
+    b.addEventListener("pointerleave", function(){ b.style.setProperty("--rx", "0deg"); b.style.setProperty("--ry", "0deg"); });
+    b.addEventListener("click", function(){
+      if (!sbloccato(g)) {
+        b.classList.remove("tremo"); void b.offsetWidth; b.classList.add("tremo");
+        toast("NON BARARE! Si sblocca il " + g + " dicembre alle " + CONFIG.ora + ":00 🔒");
+        return;
+      }
+      if (b.classList.contains("aperto")) { mostra(g); return; }
+      b.classList.add("aperto");
+      if (aperti.indexOf(g) < 0) { aperti.push(g); salva(); conta(); }
+      setTimeout(function(){ mostra(g); }, 650);
+    });
+    grid.appendChild(b);
+  });
+  conta();
+}
+function conta(){ $("hConta").textContent = aperti.length + " di 24 porte aperte"; }
+
+function mostra(g){
+  var d = GIORNI[g] || {}, c = $("card");
+  c.innerHTML = '<span class="n">' + g + '</span><span class="m">DICEMBRE</span>' +
+    (d.foto ? '<img src="' + d.foto + '" alt="" onerror="this.remove()">' : "") +
+    '<h2></h2><p></p>' +
+    (d.link ? '<a href="' + d.link + '" target="_blank" rel="noopener">' + (d.etic || "Scopri la sorpresa") + '</a><br>' : "") +
+    '<button type="button" id="chiudi">Chiudi</button>';
+  c.querySelector("h2").textContent = d.t || "";
+  c.querySelector("p").textContent = d.m || "";
+  $("modal").classList.add("on");
+  $("chiudi").addEventListener("click", chiudi);
+}
+function chiudi(){ $("modal").classList.remove("on"); }
+$("modal").addEventListener("click", function(e){ if (e.target.id === "modal") chiudi(); });
+document.addEventListener("keydown", function(e){ if (e.key === "Escape") chiudi(); });
+
+disegna();
+/* ogni 20 secondi controlla se è scattata l'ora di sblocco */
+setInterval(function(){
+  if (!$("modal").classList.contains("on"))
+    [].forEach.call(document.querySelectorAll(".t"), function(t, i){
+      t.classList.toggle("chiuso", !sbloccato(MOSAICO[i][0]));
+    });
+}, 20000);
+</script>
+</body>
+</html>
