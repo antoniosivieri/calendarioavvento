@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tessera punti dell’Avvento</title>
+<style>
+:root{--bg:#fbf6ee;--card:#fff;--ink:#2b2420;--mut:#7a6d63;--red:#b3262e;--green:#2f7d4f;--gold:#e0a526;--line:#e8dccb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1816;--card:#2a2320;--ink:#f3e9dd;--mut:#b4a596;--red:#e5575f;--green:#5fbf86;--gold:#f0bd47;--line:#413730;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.4}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:4px 0 2px;color:var(--red)}
+h2{font-size:1.05rem;margin:22px 0 8px}
+.sub{color:var(--mut);font-size:.9rem;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.big{font-size:2.4rem;font-weight:bold;color:var(--green);line-height:1}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0 4px}
+.bar i{display:block;height:100%;background:var(--gold);transition:width .3s}
+.stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px;margin-top:12px}
+.st{aspect-ratio:1;border-radius:50%;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--mut)}
+.st.on{border:2px solid var(--gold);background:var(--gold);color:#2b2420;font-weight:bold}
+.st.goal{border-color:var(--red)}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px}
+button.p{background:var(--green);border-color:var(--green);color:#fff;font-weight:bold}
+button.r{background:var(--red);border-color:var(--red);color:#fff;font-weight:bold}
+button:disabled{opacity:.45;cursor:default}
+input{font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-width:0}
+.small{font-size:.85rem;color:var(--mut)}
+.add{display:flex;gap:6px;margin-top:10px}
+.add input{flex:1}
+.add input.n{flex:0 0 70px}
+.log{font-size:.85rem;color:var(--mut);padding:3px 0}
+.x{padding:4px 9px}
+</style>
+</head>
+<body>
+<main>
+<h1>🎄 Tessera punti dell’Avvento</h1>
+<p class="sub">Ogni azione vale i suoi punti, massimo 2 azioni al giorno. Raggiungi una soglia e riscatta il premio!</p>
+
+<div class="card" id="top"></div>
+
+<h2>Azioni da fare</h2>
+<div class="card" id="tasks"></div>
+
+<h2>Premi</h2>
+<div class="card" id="prizes"></div>
+
+<h2>Ultimi movimenti</h2>
+<div class="card" id="log"></div>
+
+<p style="display:flex;gap:8px;margin-top:18px">
+<button id="edit">✏️ Modifica</button>
+<button id="reset">↺ Azzera tutto</button>
+</p>
+</main>
+<script>
+const KEY="avvento-tessera-v2";
+const DEF={tasks:[{n:"Non mi sono lamentata di un mio dolore",p:1},{n:"Ho dato la pappa a Salem",p:1},{n:"Ho fatto un bel complimento al mio fidanzato",p:2},{n:"Non ho fatto il riposino pomeridiano",p:1},{n:"Ho finito lo studio",p:1},{n:"Ho lavorato",p:2},{n:"Ho cucinato",p:1},{n:"Ho bevuto 2 L d’acqua",p:1}],
+prizes:[{n:"Scelgo la musica in macchina",c:5},{n:"Serata film con i popcorn",c:10},{n:"Scelgo la cena",c:15},{n:"Regalo speciale",c:24}],
+earned:0,spent:0,log:[],edit:false};
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))||null}catch(e){S=null}
+if(!S)S=JSON.parse(JSON.stringify(DEF));
+S.tasks=S.tasks.map(t=>typeof t==="string"?{n:t,p:1}:t);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const iso=()=>new Date().toLocaleDateString("sv-SE");
+function left(){if(!S.day||S.day.d!==iso())S.day={d:iso(),n:0};return 2-S.day.n}
+const $=id=>document.getElementById(id);
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const when=()=>new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"});
+function addLog(t){S.log.unshift(when()+" · "+t);S.log=S.log.slice(0,30)}
+function bal(){return S.earned-S.spent}
+function render(){
+ const b=bal(),ps=[...S.prizes].sort((a,c)=>a.c-c.c),max=Math.max(1,...ps.map(p=>p.c),b);
+ const next=ps.find(p=>p.c>b);
+ let h=`<div style="display:flex;align-items:baseline;gap:8px"><span class="big">${b}</span><span>punti disponibili</span></div>`;
+ if(next){const pr=Math.min(100,b/next.c*100);h+=`<div class="bar"><i style="width:${pr}%"></i></div><div class="small">Ancora ${next.c-b} per «${esc(next.n)}»</div>`}
+ else h+=`<div class="small">Hai raggiunto tutte le soglie! 🎉</div>`;
+ h+=`<div class="stamps">`;
+ const goals=new Set(ps.map(p=>p.c));
+ for(let i=1;i<=max;i++)h+=`<div class="st ${i<=b?"on":""} ${goals.has(i)?"goal":""}">${goals.has(i)?"🎁":i}</div>`;
+ $("top").innerHTML=h+`</div><div class="small" style="margin-top:10px">Oggi: ${2-left()}/2 azioni fatte${left()?"":" · torna domani! 🌙"}</div>`;
+ $("tasks").innerHTML=S.tasks.map((t,i)=>`<div class="row"><span>${esc(t.n)} <span class="small">(+${t.p})</span></span><span>${S.edit?`<button class="x" data-dt="${i}">✕</button>`:`<button class="p" data-t="${i}" ${left()?"":"disabled"}>+${t.p}</button>`}</span></div>`).join("")+(S.edit?`<div class="add"><input id="nt" placeholder="Nuova azione"><input class="n" id="ntp" type="number" min="1" value="1"><button id="at">Aggiungi</button></div>`:"")||"";
+ $("prizes").innerHTML=ps.map((p,i)=>`<div class="row"><span>🎁 ${esc(p.n)}<br><span class="small">${p.c} punti</span></span><span>${S.edit?`<button class="x" data-dp="${i}">✕</button>`:`<button class="r" data-p="${i}" ${b<p.c?"disabled":""}>Riscatta</button>`}</span></div>`).join("")+(S.edit?`<div class="add"><input id="np" placeholder="Nuovo premio"><input class="n" id="nc" type="number" min="1" placeholder="Punti"><button id="ap">Aggiungi</button></div>`:"");
+ $("log").innerHTML=S.log.length?S.log.map(l=>`<div class="log">${esc(l)}</div>`).join(""):`<div class="small">Ancora nessun punto: inizia dalla prima azione!</div>`;
+ $("edit").textContent=S.edit?"✔️ Fine modifica":"✏️ Modifica";
+ const ds=[...S.prizes].sort((a,c)=>a.c-c.c);
+ document.querySelectorAll("[data-t]").forEach(e=>e.onclick=()=>{if(!left())return;const t=S.tasks[+e.dataset.t];S.day.n++;S.earned+=t.p;addLog("+"+t.p+" · "+t.n);save();render()});
+ document.querySelectorAll("[data-p]").forEach(e=>e.onclick=()=>{const p=ds[+e.dataset.p];if(bal()<p.c)return;S.spent+=p.c;addLog("🎁 Riscattato: "+p.n+" (−"+p.c+")");save();render()});
+ document.querySelectorAll("[data-dt]").forEach(e=>e.onclick=()=>{S.tasks.splice(+e.dataset.dt,1);save();render()});
+ document.querySelectorAll("[data-dp]").forEach(e=>e.onclick=()=>{const p=ds[+e.dataset.dp];S.prizes.splice(S.prizes.indexOf(p),1);save();render()});
+ if($("at"))$("at").onclick=()=>{const v=$("nt").value.trim(),p=parseInt($("ntp").value)||1;if(v){S.tasks.push({n:v,p});save();render()}};
+ if($("ap"))$("ap").onclick=()=>{const v=$("np").value.trim(),c=parseInt($("nc").value);if(v&&c>0){S.prizes.push({n:v,c});save();render()}};
+}
+$("edit").onclick=()=>{S.edit=!S.edit;save();render()};
+let armed=false;
+$("reset").onclick=()=>{if(!armed){armed=true;$("reset").textContent="Sicuro? Tocca ancora";setTimeout(()=>{armed=false;$("reset").textContent="↺ Azzera tutto"},3000);return}
+ S=JSON.parse(JSON.stringify(DEF));save();armed=false;$("reset").textContent="↺ Azzera tutto";render()};
+render();
+</script>
+</body>
+</html>
